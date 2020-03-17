@@ -19,7 +19,7 @@ const PersonForm = ({newName, setNewName, newNumber, setNewNumber, addPerson, fo
                 <button type="submit">Add</button>
             </div>
         </form>
-    )
-}
+    );
+};
 
 export default PersonForm;

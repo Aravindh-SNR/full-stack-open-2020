@@ -6,10 +6,10 @@ const Filter = ({searchName, setSearchName}) => {
     return (
         <div>
             Search for name: <input value={searchName} 
-                onChange={event => setSearchName(event.target.value.toLowerCase())}
+                onChange={event => setSearchName(event.target.value)}
             />
         </div>
-    )
-}
+    );
+};
 
 export default Filter;
