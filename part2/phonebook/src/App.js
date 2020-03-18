@@ -3,12 +3,19 @@ import personService from './services/persons';
 import Filter from './components/Filter';
 import PersonForm from './components/PersonForm';
 import Persons from './components/Persons';
+import Notification from './components/Notification';
+import './index.css';
 
 const App = () => {
   const [ persons, setPersons] = useState([]);
   const [ newName, setNewName ] = useState('');
   const [ newNumber, setNewNumber ] = useState('');
   const [ searchName, setSearchName ] = useState('');
+  
+  // Notification message and its type
+  const [ message, setMessage ] = useState(null);
+  const [ type, setType ] = useState('');
+
   const focusName = useRef();
 
   // Fetch persons array from json-server once the component is rendered for the first time
@@ -26,25 +33,41 @@ const App = () => {
 
     // Update person if newName already exists, otherwise add new person
     if (existingPerson) {
-      if (window.confirm(`${newName} is already added to phonebook, replace the old number with a new one?`)) {
-        personService
-          .update(existingPerson.id, {...existingPerson, number: newNumber})
-          .then(updatedPerson => setPersons(persons.map(person => {
-            return person.id === updatedPerson.id ? updatedPerson : person;
-          })));
+      window.confirm(`${newName} is already added to phonebook, replace the old number with a new one?`) &&
+      personService
+        .update(existingPerson.id, {...existingPerson, number: newNumber})
+        .then(updatedPerson => {
+          setPersons(persons.map(person => person.id === updatedPerson.id ? updatedPerson : person));
+          
+          // Set notification message to be displayed
+          setMessage(`Updated ${newName}'s number`);
+          setType('info');
 
-        // Clear input data
-        setNewName('');
-        setNewNumber('');
-      }
+          // Clear input data
+          setNewName('');
+          setNewNumber('');
+        })
+        .catch(() => {
+          // When a user tries to update an already deleted person
+
+          setMessage(`Information of ${newName} has already been deleted`);
+          setType('error');
+          setPersons(persons.filter(person => person.id !== existingPerson.id));
+        });
     } else {
       personService
         .create(newName, newNumber)
-        .then(newPerson => setPersons(persons.concat(newPerson)));
+        .then(newPerson => {
+          setPersons(persons.concat(newPerson));
 
-      // Clear input data
-      setNewName('');
-      setNewNumber('');
+          // Set notification message to be displayed
+          setMessage(`Added ${newName}`);
+          setType('info');
+
+          // Clear input data
+          setNewName('');
+          setNewNumber('');
+        });
     }
 
     // Place focus back on name input
@@ -53,15 +76,21 @@ const App = () => {
 
   // Function to delete a person from the phonebook
   const deletePerson = (id, name) => {
-    window.confirm(`Delete ${name}?`) &&
-    personService
-      .remove(id)
-      .then(response => response === 200 && setPersons(persons.filter(person => person.id !== id)));
+    if (window.confirm(`Delete ${name}?`)) {
+      personService
+        .remove(id)
+        .then(() => {
+          setPersons(persons.filter(person => person.id !== id));
+          setMessage(`Deleted ${name}`);
+          setType('info');
+        });
+    } 
   };
 
   return (
     <div>
       <h2>Phonebook</h2>
+      <Notification message={message} type={type} setMessage={setMessage} setType={setType} />
       <Filter searchName={searchName} setSearchName={setSearchName} />
 
       <h3>Add a new</h3>

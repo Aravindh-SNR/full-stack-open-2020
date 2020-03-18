@@ -18,12 +18,7 @@ const create = (name, number) => (
 );
 
 // Remove a person from the phonebook
-// The callback is made to return status since data property is an empty object for axios delete method
-const remove = id => (
-    axios
-        .delete(`${baseUrl}/${id}`)
-        .then(response => response.status)
-);
+const remove = id => axios.delete(`${baseUrl}/${id}`);
 
 // Update phone number of an existing person
 const update = (id, updatedPerson) => (
