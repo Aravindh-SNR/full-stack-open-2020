@@ -18,11 +18,17 @@ const App = () => {
 
   const focusName = useRef();
 
+  // Function to clear input data and place focus back on name input after a person is added or updated
+  const clearInput = () => {
+    setNewName('');
+    setNewNumber('');
+    focusName.current.focus();    
+  };
+
   // Fetch persons array from json-server once the component is rendered for the first time
   useEffect(() => {
-    personService
-      .getAll()
-      .then(setPersons);
+    personService.getAll()
+    .then(setPersons);
   }, []);
 
   // Function to add a person to the phonebook
@@ -34,56 +40,54 @@ const App = () => {
     // Update person if newName already exists, otherwise add new person
     if (existingPerson) {
       window.confirm(`${newName} is already added to phonebook, replace the old number with a new one?`) &&
-      personService
-        .update(existingPerson.id, {...existingPerson, number: newNumber})
-        .then(updatedPerson => {
-          setPersons(persons.map(person => person.id === updatedPerson.id ? updatedPerson : person));
-          
-          // Set notification message to be displayed
-          setMessage(`Updated ${newName}'s number`);
-          setType('info');
+      personService.update(existingPerson.id, {number: newNumber})
+      .then(updatedPerson => {
+        setPersons(persons.map(person => person.id === updatedPerson.id ? updatedPerson : person));
+        
+        // Set notification message to be displayed
+        setMessage(`Updated ${newName}'s number`);
+        setType('info');
 
-          // Clear input data
-          setNewName('');
-          setNewNumber('');
-        })
-        .catch(() => {
-          // When a user tries to update an already deleted person
-
+        clearInput();
+      })
+      .catch(error => {
+        // When a user tries to update an already deleted person
+        if (error.name === 'TypeError') {
           setMessage(`Information of ${newName} has already been deleted`);
-          setType('error');
           setPersons(persons.filter(person => person.id !== existingPerson.id));
-        });
+        } else {
+          setMessage(error.response.data.error);
+        }
+
+        setType('error');
+      });
     } else {
-      personService
-        .create(newName, newNumber)
-        .then(newPerson => {
-          setPersons(persons.concat(newPerson));
+      personService.create(newName, newNumber)
+      .then(newPerson => {
+        setPersons(persons.concat(newPerson));
 
-          // Set notification message to be displayed
-          setMessage(`Added ${newName}`);
-          setType('info');
+        // Set notification message to be displayed
+        setMessage(`Added ${newName}`);
+        setType('info');
 
-          // Clear input data
-          setNewName('');
-          setNewNumber('');
-        });
+        clearInput();
+      })
+      .catch(error => {
+        setMessage(error.response.data.error);
+        setType('error');
+      });
     }
-
-    // Place focus back on name input
-    focusName.current.focus();
   };
 
   // Function to delete a person from the phonebook
   const deletePerson = (id, name) => {
     if (window.confirm(`Delete ${name}?`)) {
-      personService
-        .remove(id)
-        .then(() => {
-          setPersons(persons.filter(person => person.id !== id));
-          setMessage(`Deleted ${name}`);
-          setType('info');
-        });
+      personService.remove(id)
+      .then(() => {
+        setPersons(persons.filter(person => person.id !== id));
+        setMessage(`Deleted ${name}`);
+        setType('info');
+      });
     } 
   };
 
